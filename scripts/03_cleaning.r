@@ -4,10 +4,10 @@
 
 process_data <- function(df) {
   cat("Cleaning data and calculating prices...\n")
-  
+
   # 1. REMOVE BAD 'AGENCY' COLUMN IF IT EXISTS
   # The previous loader created a wrong 'agency' column. We delete it.
-  if("agency" %in% names(df)) {
+  if ("agency" %in% names(df)) {
     cat("  -> Removing incorrect 'agency' column...\n")
     df <- df %>% select(-agency)
   }
@@ -15,36 +15,38 @@ process_data <- function(df) {
   # 2. RENAME CORRECT COLUMNS
   # We use b6q11 (found in scan) for Agency
   cat("  -> Renaming 'b6q11' to 'agency'...\n")
-  
+
   df_renamed <- df %>%
     rename(
-      agency   = b6q11,              # The correct Agency Column
+      agency   = b6q11, # The correct Agency Column
       qty_sold = any_of(c("b6q12")), # Quantity
-      val_sold = any_of(c("b6q13"))  # Value
+      val_sold = any_of(c("b6q13")) # Value
     )
 
   # 3. SAFETY CHECK
-  if(!"qty_sold" %in% names(df_renamed)) stop("Error: Qty column missing (b6q12)")
-  if(!"val_sold" %in% names(df_renamed)) stop("Error: Value column missing (b6q13)")
-  
+  if (!"qty_sold" %in% names(df_renamed)) stop("Error: Qty column missing (b6q12)")
+  if (!"val_sold" %in% names(df_renamed)) stop("Error: Value column missing (b6q13)")
+
   df_clean <- df_renamed %>%
     # 4. CONVERT TYPES (Strip Labels)
     mutate(
       social_group = as.numeric(as.character(social_group)),
       agency       = as.numeric(as.character(agency)),
       qty_sold     = as.numeric(as.character(qty_sold)),
-      val_sold     = as.numeric(as.character(val_sold))
+      val_sold     = as.numeric(as.character(val_sold)),
+      reason_sale  = as.numeric(as.character(reason_sale)),
+      district     = as.character(district),
+      fsu_id       = as.character(fsu_slno)
     ) %>%
-    
     # 5. FILTER VALID SALES
     filter(qty_sold > 0, val_sold > 0) %>%
-    
     # 6. CALCULATE PRICES
     mutate(
       unit_price = val_sold / qty_sold,
-      log_unit_price = log(unit_price)
+      log_unit_price = log(unit_price),
+      log_qty_sold = log(pmax(qty_sold, 0.01)),
+      log_mpce = log(pmax(mpce, 1))
     ) %>%
-    
     # 7. CASTE CATEGORIES
     mutate(
       caste_cat = case_when(
@@ -54,20 +56,29 @@ process_data <- function(df) {
         TRUE ~ "General"
       )
     ) %>%
-    
-    # 8. DEFINE AGENCY (Correct NSS Codes)
-    # 1 = Local Private Trader (Predatory)
-    # 2 = Mandi (Regulated)
+    # 8. DEFINE AGENCY (Correct NSS Codes from Block 6 Item 15)
+    # 1 = Local Private Trader
+    # 2 = Mandi
+    # 3 = Cooperative / FPO
+    # 4 = Government / FCI Procurement
+    # 5 = Processor / Mill
     mutate(
       sold_to_trader = ifelse(agency == 1, 1, 0),
-      sold_to_mandi  = ifelse(agency == 2, 1, 0)
+      sold_to_mandi = ifelse(agency == 2, 1, 0),
+      sold_to_coop = ifelse(agency == 3, 1, 0),
+      sold_to_govt = ifelse(agency == 4, 1, 0),
+      sold_to_processor = ifelse(agency == 5, 1, 0)
     ) %>%
-    
-    # 9. OUTLIER REMOVAL
-    group_by(crop_code) %>%
+    # 8.5. EXTRACT STATE FOR OUTLIER REMOVAL
+    # fsu_slno (FSU Serial Number) first 2 digits represent the state codes in NSS data
+    mutate(state = substr(as.character(fsu_slno), 1, 2)) %>%
+    # 9. OUTLIER REMOVAL (Robst Crop-by-State Trimming)
+    # Trimming at the state level ensures we don't drop valid prices in expensive states
+    # or keep absurd outliers in cheaper states.
+    group_by(crop_code, state) %>%
     mutate(
-      p01 = quantile(unit_price, 0.01, na.rm=TRUE),
-      p99 = quantile(unit_price, 0.99, na.rm=TRUE)
+      p01 = quantile(unit_price, 0.01, na.rm = TRUE),
+      p99 = quantile(unit_price, 0.99, na.rm = TRUE)
     ) %>%
     ungroup() %>%
     filter(unit_price >= p01 & unit_price <= p99)

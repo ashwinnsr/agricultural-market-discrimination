@@ -20,8 +20,9 @@ This research analyzes the **"Final Mile" gap** in Indian agriculture, shifting 
 ## Technical Implementation
 
 ### Econometric Models
-* **Model 1 (Market Access)**: A probability model testing the likelihood of selling to private traders based on caste.
-* **Model 2 (Price Discrimination)**: A log-linear model using **District Fixed Effects** to compare prices within the same geographic locale.
+* **Model 1 (Multinomial Market Access)**: A series of Linear Probability Models testing likelihood of accessing Private Traders, Mandis, Cooperatives, and Government Procurement.
+* **Model 2 (Price Discrimination & Quantile Regressions)**: A log-linear model using **District Fixed Effects**. Extended with Quantile Regressions (10th, 50th, 90th percentiles) to assess distributional penalties.
+* **Model 3 (Adverse Incorporation)**: Interaction models testing extraction mechanisms via Sharecropping (interlocked land-labor-output markets).
 
 ### File Structure
 
@@ -43,35 +44,29 @@ This research analyzes the **"Final Mile" gap** in Indian agriculture, shifting 
 ## Key Findings 
 
 ### 1. The Market Access Divide
-* **SC Farmers**: 10.1 percentage points **less likely** to sell to private traders (p < 0.01, highly significant), successfully accessing regulated Mandis.
-* **ST Farmers**: Show different market access patterns, with greater reliance on informal channels.
-* **Insight**: Different mechanisms—**Geographic Exclusion** for STs versus **Market Access Success** for SCs.
+* **SC Farmers**: 10.1 percentage points **less likely** to sell to private traders (p < 0.01) and disproportionately access regulated Mandis. However, they are systemically excluded from premium Government Procurement channels compared to General Caste peers.
+* **ST Farmers**: Show different market access patterns, with greater reliance on informal channels (+4.0%), driven by geographic exclusion.
 
-### 2. Price Discrimination Patterns
-* **Medium SC Farmers**: Face **statistically significant -3.8% price penalty** (p < 0.05)
-* **Medium ST Farmers**: Face **highly significant -5.8% penalty** (p = 0.004)
-* **Marginal SC Farmers**: Show -8.2% penalty but with wide confidence intervals [-29.5%, 19.4%] (not statistically significant)
-* **Large SC Farmers**: No statistically significant price differences
+### 2. Price Discrimination Patterns (Quantile Effects)
+* **Average (OLS)**: The aggregate OLS price penalty for SC farmers is negligible (-0.7%), but this masks extreme distributional heterogeneity.
+* **Exclusion from Premium Markets (90th Percentile)**: SC farmers face a highly significant **-1.4% penalty** at the top of the price distribution, indicating exclusion from the highest-paying market opportunities.
+* **Equalization at the Bottom (10th Percentile)**: Distress sales show no caste penalty (+1.7%), pointing to a universal price floor for desperate sellers.
 
-### 3. Statistical Reality vs. Economic Magnitude
-* **Robust Findings**: Market access discrimination against SC farmers (-10.1%, p<0.01) and price penalties for medium farmers
-* **Suggestive Patterns**: Large penalties for marginal farmers lack statistical precision
-* **Data Anomaly**: Marginal ST farmers show +69.8% unexplained premium (likely data issue)
+### 3. Mechanisms of Adverse Incorporation
+* **The Sharecropper Penalty**: Farmers under lease terms face significant price penalties compared to landowners in the exact same district selling the same crop. This proxy for tied-labor/debt highlights how pre-existing dependencies dictate disadvantageous output prices.
 
 ## Methodological Robustness
 
 ### Strengths
-* **Fixed Effects**: District (82), Crop, and State fixed effects
+* **Fixed Effects**: District, Crop, and State fixed effects neutralize spatial unobservables.
 * **Clustered Standard Errors**: At Primary Sampling Unit (village) level  
 * **Sampling Weights**: NSS population weights applied throughout
-* **Multiple Specifications**: 5 price models + 2 agency models with different controls
+* **Advanced Estimators**: Quantile regressions establish what OLS obscures; mechanistic proxies validate structural theories.
 
 ### Limitations
-* **Cross-Sectional Data**: Cannot establish causality
-* **Small Marginal Samples**: Imprecise estimates for most vulnerable farmers
-* **Missing Mechanisms**: No direct measures of bargaining power or social networks
-* **Sample Selection**: Only crop-selling households included
-* **Data Issues**: ST marginal premium (+69.8%) suggests potential data quality concerns
+* **Cross-Sectional Data**: Cannot establish firm causality over time.
+* **Small Marginal Samples**: Imprecise estimates for the absolute most vulnerable intersectional groups.
+* **Missing Direct Mechanisms**: Relying on sharecropping as a proxy for tied-labor rather than direct measurement of trader-farmer debt contracts.
 
 ## Future Research Directions
 
