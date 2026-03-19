@@ -69,19 +69,27 @@ process_data <- function(df) {
       sold_to_govt = ifelse(agency == 4, 1, 0),
       sold_to_processor = ifelse(agency == 5, 1, 0)
     ) %>%
-    # 8.5. EXTRACT STATE FOR OUTLIER REMOVAL
-    # fsu_slno (FSU Serial Number) first 2 digits represent the state codes in NSS data
-    mutate(state = substr(as.character(fsu_slno), 1, 2)) %>%
-    # 9. OUTLIER REMOVAL (Robst Crop-by-State Trimming)
-    # Trimming at the state level ensures we don't drop valid prices in expensive states
-    # or keep absurd outliers in cheaper states.
+    # 8.5. FORMAT NATIVE STATE VARIABLE
+    # Pad the native state code to 2 digits to ensure "01" matches the codebook mapping
+    mutate(state = stringr::str_pad(as.character(state), width = 2, pad = "0")) %>%
+    # 9. TWO-STAGE OUTLIER REMOVAL
+    # Stage 1: Global Crop Trimming (catch absurd data entry errors like 10,000 Rs/kg)
+    group_by(crop_code) %>%
+    mutate(
+      global_p01 = quantile(unit_price, 0.01, na.rm = TRUE),
+      global_p99 = quantile(unit_price, 0.95, na.rm = TRUE) # Aggressive top trim globally
+    ) %>%
+    ungroup() %>%
+    filter(unit_price >= global_p01 & unit_price <= global_p99) %>%
+    # Stage 2: State-Level Trimming (adjust for regional price differences)
     group_by(crop_code, state) %>%
     mutate(
       p01 = quantile(unit_price, 0.01, na.rm = TRUE),
       p99 = quantile(unit_price, 0.99, na.rm = TRUE)
     ) %>%
     ungroup() %>%
-    filter(unit_price >= p01 & unit_price <= p99)
+    filter(unit_price >= p01 & unit_price <= p99) %>%
+    select(-global_p01, -global_p99, -p01, -p99)
 
   cat(paste("Success! Final dataset ready with", nrow(df_clean), "records.\n"))
   return(df_clean)

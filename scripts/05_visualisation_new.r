@@ -81,11 +81,11 @@ print(results_df)
 p_heterogeneity <- ggplot(results_df, aes(x = land_size, y = pct_penalty)) +
   
   # Add reference line at 0 (No discrimination)
-  geom_hline(yintercept = 0, linetype = "dashed", color = "gray40", size = 1) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray40", linewidth = 1) +
   
   # Add error bars (Confidence Intervals)
   geom_errorbar(aes(ymin = pct_lower, ymax = pct_upper, color = is_significant), 
-                width = 0.15, size = 1, alpha = 0.8) +
+                width = 0.15, linewidth = 1, alpha = 0.8) +
   
   # Add points (The Estimates)
   geom_point(aes(color = is_significant), size = 5) +
@@ -123,6 +123,6 @@ p_heterogeneity <- ggplot(results_df, aes(x = land_size, y = pct_penalty)) +
 
 print(p_heterogeneity)
 
-ggsave("plot_marginal_penalty.png", plot = p_heterogeneity, width = 10, height = 6, dpi = 300)
+ggsave("../plots/plot_marginal_penalty.png", plot = p_heterogeneity, width = 10, height = 6, dpi = 300, create.dir = TRUE)
 
-cat("✅ Plot saved as 'plot_marginal_penalty.png'\n")
+cat("✅ Plot saved as '../plots/plot_marginal_penalty.png'\n")

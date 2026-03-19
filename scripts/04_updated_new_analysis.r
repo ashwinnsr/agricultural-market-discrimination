@@ -123,12 +123,12 @@ price_models$m5_simple <- feols(
 
 # --- Display comprehensive results table ---
 cat("\n--- PRICE DISCRIMINATION RESULTS TABLE ---\n")
-etable(price_models,
+print(etable(price_models,
   cluster = ~fsu_id,
   fitstat = c("n", "r2"),
   headers = c("Base", "+Controls", "+District", "+State", "Simple"),
   digits = 3
-)
+))
 
 # --- Add Quantile Regressions for Distress Sales vs Premium ---
 cat("\n\n--- QUANTILE REGRESSION: DISTRESS (10th) vs MEDIAN (50th) vs PREMIUM (90th) ---\n")
@@ -136,9 +136,9 @@ library(quantreg)
 cat("Running quantile regressions to check if SC penalty is worse for distress sales...\n")
 # Using simple base form to ensure convergence
 qr_models <- list()
-qr_models$q10 <- rq(log_unit_price ~ caste_cat + log_qty_sold + log_mpce + total_land + factor(crop_code_char), tau = 0.1, data = df_final, weights = weight)
-qr_models$q50 <- rq(log_unit_price ~ caste_cat + log_qty_sold + log_mpce + total_land + factor(crop_code_char), tau = 0.5, data = df_final, weights = weight)
-qr_models$q90 <- rq(log_unit_price ~ caste_cat + log_qty_sold + log_mpce + total_land + factor(crop_code_char), tau = 0.9, data = df_final, weights = weight)
+qr_models$q10 <- rq(log_unit_price ~ caste_cat + log_qty_sold + log_mpce + total_land + factor(crop_code_char), tau = 0.1, data = df_final, weights = weight, method = "fn")
+qr_models$q50 <- rq(log_unit_price ~ caste_cat + log_qty_sold + log_mpce + total_land + factor(crop_code_char), tau = 0.5, data = df_final, weights = weight, method = "fn")
+qr_models$q90 <- rq(log_unit_price ~ caste_cat + log_qty_sold + log_mpce + total_land + factor(crop_code_char), tau = 0.9, data = df_final, weights = weight, method = "fn")
 
 cat("10th Percentile (Distress Sales) SC Coef:", coef(qr_models$q10)["caste_catSC"], "\n")
 cat("50th Percentile (Median Sales) SC Coef:", coef(qr_models$q50)["caste_catSC"], "\n")
@@ -189,12 +189,12 @@ agency_models$m9_coop <- feols(sold_to_coop ~ caste_cat + total_land + log_mpce 
 
 # --- Display agency results table ---
 cat("\n--- MARKET ACCESS RESULTS TABLE ---\n")
-etable(agency_models,
+print(etable(agency_models,
   cluster = ~fsu_id,
   fitstat = c("n", "r2"),
   headers = c("Trader", "Trader(Dist)", "Govt(Dist)", "Coop(Dist)"),
   digits = 3
-)
+))
 
 # ==============================================================================
 # HETEROGENEITY ANALYSIS - SIMPLIFIED
@@ -297,7 +297,7 @@ p1 <- ggplot(price_summary, aes(x = reorder(caste_cat, avg_price), y = avg_price
   theme(legend.position = "none")
 
 print(p1)
-ggsave(p1, filename = "price_gaps_by_caste.png", width = 8, height = 6, dpi = 300)
+ggsave(p1, filename = "../plots/price_gaps_by_caste.png", width = 8, height = 6, dpi = 300, create.dir = TRUE)
 
 # --- Plot 2: Market access ---
 cat("2. Creating expanded market access plot...\n")
@@ -327,7 +327,7 @@ p2 <- ggplot(market_share_expanded, aes(x = caste_cat, y = Percentage, fill = Ag
 
 print(p2)
 
-ggsave(p2, filename = "market_access_by_caste_expanded.png", width = 10, height = 6, dpi = 300)
+ggsave(p2, filename = "../plots/market_access_by_caste_expanded.png", width = 10, height = 6, dpi = 300, create.dir = TRUE)
 
 # ==============================================================================
 # SUMMARY OF KEY FINDINGS

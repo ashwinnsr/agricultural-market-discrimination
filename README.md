@@ -1,4 +1,4 @@
-# To Enter or To Not Enter: Market Discrimination Against Marginalized Farmers
+# The Double Squeeze: Market Access and Price Discrimination in Indian Agriculture
 
 ## Project Overview
 This research analyzes the **"Final Mile" gap** in Indian agriculture, shifting the focus from production-side disadvantages (land and credit) to structural disadvantages at the market gate. Using the **NSS 77th Round (2019)**, the study investigates whether Scheduled Caste (SC) and Scheduled Tribe (ST) farmers face distinct mechanisms of discrimination: **Exclusion** from formal markets versus **Extraction** through predatory pricing.
@@ -10,71 +10,61 @@ This research analyzes the **"Final Mile" gap** in Indian agriculture, shifting 
 
 ## Dataset & Variables
 * **Source**: NSS 77th Round, Schedule 33.1 (2019).
-* **Sample**: 41,641 sales records.
-* **Composition**: General (27.3%), OBC (39.6%), SC (11.0%), and ST (22.1%).
+* **Sample**: 39,219 sales records (final analytical dataset).
 * **Key Metrics**: 
-    * **Unit Price**: Value sold divided by quantity[cite: 25].
-    * **Market Choice**: Formal (Mandi/Coop) vs. Informal (Private Trader).
+    * **Unit Price**: Value sold divided by quantity.
+    * **Market Choice**: Formal (Mandi/Coop/Govt) vs. Informal (Private Trader).
     * **Land Categories**: Marginal (<0.5ha), Small (0.5-2ha), Medium (2-5ha), and Large (>5ha).
 
 ## Technical Implementation
 
 ### Econometric Models
-* **Model 1 (Multinomial Market Access)**: A series of Linear Probability Models testing likelihood of accessing Private Traders, Mandis, Cooperatives, and Government Procurement.
-* **Model 2 (Price Discrimination & Quantile Regressions)**: A log-linear model using **District Fixed Effects**. Extended with Quantile Regressions (10th, 50th, 90th percentiles) to assess distributional penalties.
+* **Model 1 (Agency Choice)**: Linear Probability Models testing likelihood of accessing Private Traders, Mandis, Cooperatives, and Government Procurement.
+* **Model 2 (Price Discrimination & Quantile Regressions)**: A log-linear model using **District Fixed Effects**. Extended with Quantile Regressions (10th, 50th, 90th percentiles using the Frisch-Newton method) to assess distributional penalties.
 * **Model 3 (Adverse Incorporation)**: Interaction models testing extraction mechanisms via Sharecropping (interlocked land-labor-output markets).
 
+### Pipeline Execution
+The entire analysis is automated via a master script.
+**Run instruction:** `source("00_run_all.R")` (Runtime: ~0.3 minutes).
+
 ### File Structure
-
-
 ```bash
-├── 01_setup.R                 # Configuration and package loading
-├── 02_dataloading_BULLETPROOF.R  # Robust data loading with error handling
-├── 03_cleaning_FINAL_FIXED.R  # Data cleaning and variable construction
-├── 04_analysis_ROBUST_FIXED.R # Main econometric analysis
-├── 05_visualize_land_heterogeneity.R  # Land size heterogeneity plots
-├── 06_analysis_ST_Land_Penalty.R  # ST-specific analysis
-├── nss77_robust_results.rds   # Saved analysis results
-├── nss77_results_summary.csv  # Summary table of key findings
-├── price_gaps_by_caste.png    # Visualization 1
-├── market_access_by_caste.png # Visualization 2
-└── plot_marginal_penalty.png  # Visualization 3
+├── scripts/
+│   ├── 00_run_all.R                 # Master script to run full pipeline
+│   ├── 01_new_setup.r               # Environment and package loading
+│   ├── 02_dataloading_FINAL.r       # NSS 77th Round data ingestion
+│   ├── 03_cleaning.r                # Standardized cleaning and price calculation
+│   ├── 04_updated_new_analysis.r    # Main fixed-effects and quantile regressions
+│   ├── 05_visualisation_new.r       # Land size heterogeneity plots
+│   ├── 06_analysis_ST_Land_Penalty.r # ST-specific land interaction analysis
+│   ├── 07_mechanisms_analysis.r     # Tied land-labor (Sharecropper) proxies
+│   └── 08_state_wise_agency.R       # Geospatial mapping of procurement
+├── plots/
+│   ├── price_gaps_by_caste.png      # Weighted average price distribution
+│   ├── market_access_by_caste_expanded.png  # Agency choice by social group
+│   ├── plot_marginal_penalty.png    # SC Price penalty across land sizes
+│   ├── st_land_penalty_plot.png     # ST-specific price extraction effects
+│   ├── map_govt_share.png           # Geospatial: Govt Procurement
+│   └── map_trader_share.png         # Geospatial: Private Trader Dominance
+└── README.md
 ```
 
 ## Key Findings 
 
-### 1. The Market Access Divide
-* **SC Farmers**: 10.1 percentage points **less likely** to sell to private traders (p < 0.01) and disproportionately access regulated Mandis. However, they are systemically excluded from premium Government Procurement channels compared to General Caste peers.
-* **ST Farmers**: Show different market access patterns, with greater reliance on informal channels (+4.0%), driven by geographic exclusion.
+### 1. Divergent Market Access
+* **SC Shift**: SC farmers are **10.5 percentage points less likely** to sell to private traders (p < 0.01). They show a significant retreat from informal markets into formal regulated Mandis.
+* **The State Void**: Despite entering formal spaces, SC farmers do not capture higher rates of Government Procurement (FCI) or Cooperatives, leaving them in a state of "squeezed" inclusion.
 
-### 2. Price Discrimination Patterns (Quantile Effects)
-* **Average (OLS)**: The aggregate OLS price penalty for SC farmers is negligible (-0.7%), but this masks extreme distributional heterogeneity.
-* **Exclusion from Premium Markets (90th Percentile)**: SC farmers face a highly significant **-1.4% penalty** at the top of the price distribution, indicating exclusion from the highest-paying market opportunities.
-* **Equalization at the Bottom (10th Percentile)**: Distress sales show no caste penalty (+1.7%), pointing to a universal price floor for desperate sellers.
+### 2. The Glass Ceiling of Price Returns (Quantile Effects)
+* **Distress Sales (10th Pct)**: No caste penalty (+0.9%). In distress, the market collapses for everyone equally.
+* **Premium Sales (90th Pct)**: SC farmers face a significant **-1.9% price penalty**, proving they are systemically locked out of the highest-paying market opportunities.
+* **Baseline Displacement**: The robust District FE model shows a consistent **-2.3% log point** displacement for SC farmers.
 
 ### 3. Mechanisms of Adverse Incorporation
-* **The Sharecropper Penalty**: Farmers under lease terms face significant price penalties compared to landowners in the exact same district selling the same crop. This proxy for tied-labor/debt highlights how pre-existing dependencies dictate disadvantageous output prices.
+* **The Sharecropper Penalty**: Being a sharecropper exerts an independent **4.8% price penalty**.
+* **ST Squeeze**: Tribal sharecroppers face a devastating interaction penalty of **-23.3%**, illustrating that "Adverse Incorporation" (tied land-labor) is a primary channel of tribal exploitation.
 
 ## Methodological Robustness
-
-### Strengths
-* **Fixed Effects**: District, Crop, and State fixed effects neutralize spatial unobservables.
-* **Clustered Standard Errors**: At Primary Sampling Unit (village) level  
-* **Sampling Weights**: NSS population weights applied throughout
-* **Advanced Estimators**: Quantile regressions establish what OLS obscures; mechanistic proxies validate structural theories.
-
-### Limitations
-* **Cross-Sectional Data**: Cannot establish firm causality over time.
-* **Small Marginal Samples**: Imprecise estimates for the absolute most vulnerable intersectional groups.
-* **Missing Direct Mechanisms**: Relying on sharecropping as a proxy for tied-labor rather than direct measurement of trader-farmer debt contracts.
-
-## Future Research Directions
-
-### 1. Longitudinal Econometrics (Multi-Year Data)
-* **Pseudo-Panel Construction**: Aggregate NSS 70th and 77th rounds at the District-Caste-Land cohort level to track the persistence of discrimination over time.
-* **Difference-in-Differences (DiD)**: Use the staggered rollout of e-NAM (electronic markets) to see if digital integration reduces the "intersectional penalty" for marginal SC farmers.
-
-### 2. Capturing Transactional Nuances (Fieldwork)
-* **Audit Studies**: Conduct field experiments using identical crop quality to isolate pure caste bias from unobserved quality differences.
-* **Interlocked Market Surveys**: Investigate if ST reliance on traders is driven by debt-traps (credit-output linkages) rather than just geographic distance.
-* **Bargaining Observations**: Document "soft" barriers at the Mandi, such as wait times, weighing fraud, or arbitrary quality rejections.
+* **Spatial Controls**: High-dimensional Fixed Effects (District, Crop, State) neutralize geographic unobservables.
+* **Inference**: Standard errors clustered at FSU (village) level.
+* **Diagnostic Accuracy**: Pipeline uses the Frisch-Newton interior point method for robust quantile estimation on large samples.

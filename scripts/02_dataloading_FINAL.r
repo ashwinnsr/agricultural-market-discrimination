@@ -30,6 +30,7 @@ load_nss_data <- function() {
       SOCIAL_GROUP = any_of(c("B4Q3", "SOCIAL_GROUP")),
       MPCE         = any_of(c("B4Q5", "MPCE")),
       DISTRICT     = any_of(c("DISTRICT")),
+      STATE        = any_of(c("STATE")),
       WEIGHT       = any_of(c("MLT", "MULTIPLIER"))
     ) %>%
     distinct(across(all_of(VARS_KEYS)), .keep_all = TRUE)
