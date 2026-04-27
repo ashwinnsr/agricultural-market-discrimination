@@ -10,11 +10,12 @@ This research analyzes the **"Final Mile" gap** in Indian agriculture, shifting 
 
 ## Dataset & Variables
 * **Source**: NSS 77th Round, Schedule 33.1 (2019).
-* **Sample**: 39,219 sales records (final analytical dataset).
+* **Sample**: 74,565 sales records (final analytical dataset).
 * **Key Metrics**: 
     * **Unit Price**: Value sold divided by quantity.
     * **Market Choice**: Formal (Mandi/Coop/Govt) vs. Informal (Private Trader).
     * **Land Categories**: Marginal (<0.5ha), Small (0.5-2ha), Medium (2-5ha), and Large (>5ha).
+    * **Demographics**: General (20,722), OBC (30,335), SC (8,343), ST (15,165).
 
 ## Technical Implementation
 
@@ -56,13 +57,15 @@ The entire analysis is automated via a master script.
 * **The State Void**: Despite entering formal spaces, SC farmers do not capture higher rates of Government Procurement (FCI) or Cooperatives, leaving them in a state of "squeezed" inclusion.
 
 ### 2. The Glass Ceiling of Price Returns (Quantile Effects)
-* **Distress Sales (10th Pct)**: No caste penalty (+0.9%). In distress, the market collapses for everyone equally.
-* **Premium Sales (90th Pct)**: SC farmers face a significant **-1.9% price penalty**, proving they are systemically locked out of the highest-paying market opportunities.
-* **Baseline Displacement**: The robust District FE model shows a consistent **-2.3% log point** displacement for SC farmers.
+* **Distress Sales (10th Pct)**: Small positive coefficient (+0.8%). In distress, the market collapses for everyone equally.
+* **Premium Sales (90th Pct)**: SC farmers face a consistent **-0.8% price penalty**, though less pronounced than the median (-1.9%).
+* **Baseline Displacement**: The robust District FE model shows a consistent **-1.9% log point** displacement for SC farmers.
+* **ST Penalty**: ST farmers face a significant **-4.6% price penalty** at the state level (p < 0.01), reflecting severe geographic exclusion.
 
 ### 3. Mechanisms of Adverse Incorporation
-* **The Sharecropper Penalty**: Being a sharecropper exerts an independent **4.8% price penalty**.
-* **ST Squeeze**: Tribal sharecroppers face a devastating interaction penalty of **-23.3%**, illustrating that "Adverse Incorporation" (tied land-labor) is a primary channel of tribal exploitation.
+* **The Informality Trap**: High reliance on private traders (80%+) for SC and ST farmers.
+* **Indebtedness**: SC households are **6.6 percentage points more likely** to hold debt from moneylenders, a key driver of tied sales.
+* **Cooperative Success**: SC and ST farmers in cooperatives receive **7.3% and 10.7% higher prices** respectively, highlighting cooperatives as a critical intervention.
 
 ## Methodological Robustness
 * **Spatial Controls**: High-dimensional Fixed Effects (District, Crop, State) neutralize geographic unobservables.

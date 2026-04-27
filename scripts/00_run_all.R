@@ -1,13 +1,12 @@
 # ==============================================================================
-# 00_run_all.R - Master Script to Run All Analysis Steps
+# 00_run_all.R - Master Script to Run All Analysis Steps (Rewrite)
 # ==============================================================================
 
-# Set working directory to the location of this script if run interactively
+# Set working directory to the location of this script
 try({
   if (requireNamespace("rstudioapi", quietly = TRUE) && rstudioapi::isAvailable()) {
     setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
   } else {
-    # Fallback if not in RStudio but sourced via command line
     args <- commandArgs(trailingOnly = FALSE)
     file_arg <- grep("--file=", args, value = TRUE)
     if (length(file_arg) > 0) {
@@ -17,26 +16,29 @@ try({
 }, silent = TRUE)
 
 message("Current working directory: ", getwd())
-message("Starting full analysis pipeline...")
+message("Starting full analysis pipeline (Rewritten Architecture)...")
 
-# List of scripts in order of execution
 scriptsToRun <- c(
-  "01_new_setup.r",
+  "01_setup.R",
   "02_dataloading_FINAL.r",
   "03_cleaning.r",
-  "04_updated_new_analysis.r",
-  "05_visualisation_new.r",
-  "06_analysis_ST_Land_Penalty.r",
-  "07_mechanisms_analysis.r",
-  "08_state_wise_agency.R"
+  "04_descriptives.r",
+  "05_price_regressions.R",
+  "06_oaxaca.R",
+  "07_agency_regressions.R",
+  "08_visualisations.R",
+  "09_mechanisms.R",
+  "10_state_maps.R"
 )
 
-# Keep track of execution time
 start_time <- Sys.time()
 
-# Source each script and log progress
 for (script in scriptsToRun) {
   message(sprintf("\n\n%s", strrep("=", 80)))
+  if(!file.exists(script)) {
+    message(sprintf("❌ Target script %s does not exist. Skipping...", script))
+    next
+  }
   message(sprintf("▶ RUNNING: %s", script))
   message(sprintf("▶ TIME: %s", format(Sys.time(), "%Y-%m-%d %H:%M:%S")))
   message(sprintf("%s\n", strrep("=", 80)))
@@ -44,7 +46,6 @@ for (script in scriptsToRun) {
   script_start <- Sys.time()
   
   tryCatch({
-    # Source the script inline to keep variables in global environment
     source(script, echo = FALSE)
     
     script_end <- Sys.time()
