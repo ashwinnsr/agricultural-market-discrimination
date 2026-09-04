@@ -141,15 +141,20 @@ if (!is.null(india_map)) {
     map_data <- india_map %>% left_join(state_shares, by="join_key")
 
     # Custom theme for maps
+    # Custom theme for maps with solid plain white background and high-contrast text
     theme_map <- function() {
         theme_void() +
         theme(
-            plot.title    = element_text(face="bold", size=18, hjust=0.5),
-            plot.subtitle = element_text(size=12, hjust=0.5, color="grey30"),
-            plot.caption  = element_text(size=9, color="grey50"),
-            legend.position = "right",
-            legend.title  = element_text(face="bold", size=11),
-            plot.margin   = margin(10, 20, 10, 20)
+            plot.background   = element_rect(fill = "white", color = NA),
+            panel.background  = element_rect(fill = "white", color = NA),
+            legend.background = element_rect(fill = "white", color = NA),
+            plot.title        = element_text(face="bold", size=18, hjust=0.5, color="black"),
+            plot.subtitle     = element_text(size=12, hjust=0.5, color="grey20"),
+            plot.caption      = element_text(size=10, color="grey20", hjust=0.5, margin=margin(t=10)),
+            legend.position   = "right",
+            legend.title      = element_text(face="bold", size=11, color="black"),
+            legend.text       = element_text(size=10, color="black"),
+            plot.margin       = margin(15, 20, 15, 20)
         )
     }
 
@@ -172,7 +177,7 @@ if (!is.null(india_map)) {
         ) +
         theme_map()
 
-    ggsave("../plots/map_govt_share.png", p_map_govt, width=11, height=10, dpi=300)
+    ggsave("../plots/map_govt_share.png", p_map_govt, width=11, height=10, dpi=300, bg="white")
     cat("✅ Saved: map_govt_share.png\n")
 
     # --- MAP 2: Private Trader Share ---
@@ -191,7 +196,7 @@ if (!is.null(india_map)) {
         ) +
         theme_map()
 
-    ggsave("../plots/map_trader_share.png", p_map_trader, width=11, height=10, dpi=300)
+    ggsave("../plots/map_trader_share.png", p_map_trader, width=11, height=10, dpi=300, bg="white")
     cat("✅ Saved: map_trader_share.png\n")
 
     # --- MAP 3: APMC Mandi Share ---
@@ -210,7 +215,7 @@ if (!is.null(india_map)) {
         ) +
         theme_map()
 
-    ggsave("../plots/map_mandi_share.png", p_map_mandi, width=11, height=10, dpi=300)
+    ggsave("../plots/map_mandi_share.png", p_map_mandi, width=11, height=10, dpi=300, bg="white")
     cat("✅ Saved: map_mandi_share.png\n")
 
 } else {
