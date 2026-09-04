@@ -1,0 +1,7 @@
+"Spec","Group","Total_Gap_log","Total_Gap_pct","Explained_log","Explained_pct","Unexplained_log","Unexplained_pct"
+"Baseline (with land)","SC",-0.0097,-0.96,-0.0067,69.4,-0.003,30.6
+"Baseline (with land)","ST",-0.16,-14.79,-0.1897,118.5,0.0297,-18.5
+"Baseline (with land)","OBC",-0.0689,-6.66,-0.0411,59.7,-0.0278,40.3
+"Sensitivity (no land)","SC",-0.0097,-0.96,-0.0454,469.5,0.0357,-369.5
+"Sensitivity (no land)","ST",-0.16,-14.79,-0.1542,96.4,-0.0058,3.6
+"Sensitivity (no land)","OBC",-0.0689,-6.66,-0.0413,59.9,-0.0277,40.1

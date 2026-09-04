@@ -72,8 +72,10 @@ print(state_shares %>% select(State_Name, Total_Sales, Govt_Share, Mandi_Share, 
 # --- Load shapefile ---
 cat("\nLoading local official India shapefile...\n")
 india_map <- tryCatch({
-    # The shapefile is located outside the 'code' directory in 'India Shape'
-    shp <- st_read("../../India Shape/india_st.shp", quiet=TRUE)
+    shp_paths <- c("../India Shape/india_st.shp", "India Shape/india_st.shp", "code/India Shape/india_st.shp", "../../India Shape/india_st.shp")
+    valid_shp <- shp_paths[file.exists(shp_paths)][1]
+    if (is.na(valid_shp)) stop("Shapefile india_st.shp not found in candidate paths.")
+    shp <- st_read(valid_shp, quiet=TRUE)
     
     # Identify the state name column dynamically (e.g. STATE, ST_NM, NAME_1, statename)
     col_names <- names(shp)

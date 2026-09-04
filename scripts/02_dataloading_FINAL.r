@@ -37,6 +37,9 @@ load_all_nss_data <- function() {
     combined <- left_join(l6, l7_unique, by = blk6_join_keys) %>%
       mutate(
         visit = visit_label,
+        # NSS 77th HHID format: FSU_SLNO (5 digits) + SSS (1 digit) + HH_NO (2 digits) + VISIT (1 digit) = 9 digits.
+        # The first 8 digits uniquely identify the household. The 9th digit is the visit number (1 or 2).
+        # We strip the visit number to construct a common panel ID for linking across waves.
         panel_id = substr(as.character(HHID), 1, 8)
       )
     cat("   Visit", visit_label, ":", nrow(combined), "rows loaded\n")
@@ -44,19 +47,62 @@ load_all_nss_data <- function() {
   }
 
 
-  blk6 <- bind_rows(
-    load_blk6_visit(
-      "Visit 1 Level - 06 (Block 6) output of crops produced during the period July - December 2018.sav",
-      "Visit 1 Level 07 (Block 6) output of crops produced during the period July - December 2018.sav",
-      "1"
-    ),
-    load_blk6_visit(
-      "Visit 2 Level - 06 (Block 6) output of crops produced during the period July - December 2018.sav",
-      "Visit 2 Level 07 (Block 6) output of crops produced during the period July - December 2018.sav",
-      "2"
-    )
+  blk6_v1 <- load_blk6_visit(
+    "Visit 1 Level - 06 (Block 6) output of crops produced during the period July - December 2018.sav",
+    "Visit 1 Level 07 (Block 6) output of crops produced during the period July - December 2018.sav",
+    "1"
   )
+  
+  blk6_v2 <- load_blk6_visit(
+    "Visit 2 Level - 06 (Block 6) output of crops produced during the period July - December 2018.sav",
+    "Visit 2 Level 07 (Block 6) output of crops produced during the period July - December 2018.sav",
+    "2"
+  )
+
+  # DIAGNOSTIC: Verify Visit 2 file identity (Fix 1)
+  # Confirms Visit 1 and Visit 2 panel_ids share panel households as expected.
+  v1_panels <- unique(blk6_v1$panel_id)
+  v2_panels <- unique(blk6_v2$panel_id)
+  overlap <- sum(v2_panels %in% v1_panels)
+  
+  cat("\n[DIAGNOSTIC] Wave identity check (Fix 1):\n")
+  cat(sprintf("   Visit 1 unique households (panel_id): %d\n", length(v1_panels)))
+  cat(sprintf("   Visit 2 unique households (panel_id): %d\n", length(v2_panels)))
+  cat(sprintf("   Overlapping households (panel_id):    %d (%.1f%% of Visit 2)\n", overlap, 100 * overlap / length(v2_panels)))
+  
+  if (identical(sort(v1_panels), sort(v2_panels))) {
+    stop("CRITICAL ERROR: Visit 2 is an exact duplicate of Visit 1 panel_id set!")
+  } else if (overlap == 0) {
+    warning("Zero overlap between Visit 1 and Visit 2 panel_ids. Is this expected (no panel tracking)?")
+  } else {
+    cat("   Wave identity check passed (Visit 1 and 2 are distinct but share panel HHs as expected).\n")
+  }
+
+  blk6 <- bind_rows(blk6_v1, blk6_v2)
   cat("   Combined Block 6:", nrow(blk6), "rows\n")
+
+  # DIAGNOSTIC: Verify panel_id construction
+  # panel_id = substr(HHID, 1, 8) correctly identifies the household.
+  # NSS 77th HHID = FSU_SLNO(5) + SSS(1) + HH_NO(2) + VISITNO(1).
+  # The 9th digit (VISITNO) differs across waves; stripping it gives a stable
+  # 8-digit household ID to link Visit 1 and Visit 2 records.
+  # This check confirms each panel_id maps to at most 1 HHID per visit wave.
+  panel_check <- blk6 %>%
+    group_by(panel_id, visit) %>%
+    summarise(
+      n_hhids = n_distinct(HHID),
+      .groups = "drop"
+    )
+  max_hhids <- max(panel_check$n_hhids)
+  
+  cat("\n[DIAGNOSTIC] panel_id validity check:\n")
+  cat(sprintf("   Maximum unique HHIDs per panel_id per visit: %d\n", max_hhids))
+  if (max_hhids > 1) {
+    warning("CRITICAL WARNING: panel_id maps to multiple distinct HHIDs within the same visit wave! Substring length 8 is too short.")
+  } else {
+    cat("   panel_id validity check passed (each panel_id maps to a single HHID per visit wave).\n")
+  }
+
 
   # ===========================================================================
   # 2. BLOCK 4 HOUSEHOLD CHARACTERISTICS (Visit 1 only - canvassed once)
@@ -75,6 +121,7 @@ load_all_nss_data <- function() {
         if ("MPCE" %in% names(.)) MPCE else NULL
       )),
       hh_weight = safe_num(MLT) / WEIGHT_DIVISOR,
+      # Strip visit suffix (always 1 for Block 4) to make it linkable to Visit 2
       panel_id = substr(as.character(HHID), 1, 8)
     ) %>%
     select(panel_id, STATE, DISTRICT, social_group, mpce, hh_weight) %>%
@@ -88,19 +135,30 @@ load_all_nss_data <- function() {
   cat("\n[3] Loading Block 5 land data (Visit 1)...\n")
   blk5_raw <- read_clean("Visit1  Level - 04 (Block 5) - particulars of land of the household and its operation during the period July- December 2018.sav")
 
-  # Identify land area and lease terms columns
-  land_col <- names(blk5_raw)[grepl("^B5Q3$", names(blk5_raw))]
-  lease_col <- names(blk5_raw)[grepl("^B5Q10$", names(blk5_raw))]
+  # Identify land category, land area, and lease terms columns
+  cat_col    <- names(blk5_raw)[grepl("^B5Q1$",  names(blk5_raw))]
+  land_col   <- names(blk5_raw)[grepl("^B5Q3$",  names(blk5_raw))]
+  lease_col  <- names(blk5_raw)[grepl("^B5Q10$", names(blk5_raw))]
 
   blk5 <- blk5_raw %>%
     mutate(
-      land_area  = if (length(land_col) > 0) safe_num(.data[[land_col[1]]]) else NA_real_,
+      row_cat    = if (length(cat_col) > 0)   safe_num(.data[[cat_col[1]]])   else NA_real_,
+      land_area  = if (length(land_col) > 0)  safe_num(.data[[land_col[1]]])  else NA_real_,
       lease_term = if (length(lease_col) > 0) safe_num(.data[[lease_col[1]]]) else NA_real_,
       panel_id   = substr(as.character(HHID), 1, 8)
     ) %>%
+    # Exclude B5Q1 == 10 (pre-computed total summary row) to prevent 2x double counting
+    filter(!is.na(row_cat), row_cat != 10) %>%
     group_by(panel_id) %>%
     summarise(
-      total_land = sum(land_area, na.rm = TRUE),
+      # Land possessed (acres): owned+possessed (1,6) + leased-in (2,3,7,8) + otherwise possessed (4,9)
+      land_possessed  = sum(land_area[row_cat %in% c(1, 2, 3, 4, 6, 7, 8, 9)], na.rm = TRUE),
+      # Land owned (acres): owned+possessed (1,6) + leased-out (5)
+      land_owned      = sum(land_area[row_cat %in% c(1, 6, 5)], na.rm = TRUE),
+      # Leased-out area (acres)
+      land_leased_out = sum(land_area[row_cat == 5], na.rm = TRUE),
+      # Backward compatibility alias
+      total_land      = land_possessed,
       is_sharecropper = as.integer(any(lease_term == 3, na.rm = TRUE)),
       .groups = "drop"
     )
@@ -123,6 +181,7 @@ load_all_nss_data <- function() {
       is_informal_lender = as.integer(loan_source %in% c(15, 16, 20)),
       # Agricultural purpose loan
       is_agri_loan = as.integer(loan_purpose %in% c(1, 2)),
+      # Strip visit suffix
       panel_id = substr(as.character(HHID), 1, 8)
     ) %>%
     group_by(panel_id) %>%
@@ -150,6 +209,7 @@ load_all_nss_data <- function() {
       msp_qty = safe_num(B14Q7),
       msp_rate = safe_num(B14Q8),
       msp_skip_reason = safe_num(B14Q9),
+      # Strip visit suffix
       panel_id = substr(as.character(HHID), 1, 8)
     ) %>%
     # Aggregate to household level: aware of MSP for ANY crop grown
@@ -184,6 +244,7 @@ load_all_nss_data <- function() {
         imputed_exp = safe_num(B7Q8),
         input_quality = safe_num(B7Q6),
         visit = visit_label,
+        # Strip visit suffix
         panel_id = substr(as.character(HHID), 1, 8)
       )
   }

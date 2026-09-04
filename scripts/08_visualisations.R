@@ -42,9 +42,10 @@ safe_wtd_var <- function(x, w) {
   keep <- !is.na(x) & !is.na(w) & w > 0
   x <- x[keep]; w <- w[keep]
   if (length(x) < 2) return(NA_real_)
-  # Frequency-weight normalised variance
+  # Normalize weights to sum to sample size, matching Hmisc::wtd.var(normwt=TRUE)
+  w_norm <- w * (length(x) / sum(w))
   wbar <- sum(w * x) / sum(w)
-  sum(w * (x - wbar)^2) / (sum(w) - 1)
+  sum(w_norm * (x - wbar)^2) / (length(x) - 1)
 }
 
 price_summ <- df_final %>%

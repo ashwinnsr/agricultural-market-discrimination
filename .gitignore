@@ -1,31 +1,16 @@
-# .gitignore for R project
-
-# Data files (usually too large for GitHub)
+# Data & Large Output Files
 *.sav
-*.rds
-*.csv
-*.xlsx
 *.dta
-
-# R Environment
-.Rhistory
-.RData
+*.xlsx
+*.rds
+*.RData
+*.Rhistory
 .Rproj.user
-
-# Output files
-*.pdf
-*.png
-*.jpg
-*.jpeg
 
 # OS generated files
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
 Thumbs.db
+ehthumbs.db
 
 # Temporary files
 *.tmp

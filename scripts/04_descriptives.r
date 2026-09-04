@@ -142,22 +142,33 @@ cat(sprintf("%-10s %12s %12s %12s %12s\n",
             "Group", "Mean Price", "Gap vs Gen", "t-stat", "p-value"))
 cat(strrep("-", 60), "\n")
 
-general_prices <- df_final %>% filter(caste_cat == "General")
+# Use cluster-robust weighted mean comparison via feols
 for (g in c("OBC","SC","ST")) {
-  grp_prices <- df_final %>% filter(caste_cat == g)
-  if (nrow(grp_prices) > 30) {
-    tt <- tryCatch(
-      t.test(grp_prices$unit_price, general_prices$unit_price),
+  df_tt <- df_final %>%
+    filter(caste_cat %in% c("General", g)) %>%
+    mutate(is_comparison = as.integer(caste_cat == g)) %>%
+    filter(is.finite(unit_price), !is.na(weight))
+  
+  if (nrow(df_tt) > 30) {
+    m_tt <- tryCatch(
+      feols(unit_price ~ is_comparison, data = df_tt, weights = ~weight, cluster = ~fsu_id),
       error = function(e) NULL
     )
-    if (!is.null(tt)) {
-      gap <- mean(grp_prices$unit_price, na.rm=TRUE) - mean(general_prices$unit_price, na.rm=TRUE)
+    if (!is.null(m_tt) && "is_comparison" %in% names(coef(m_tt))) {
+      coef_val <- coef(m_tt)["is_comparison"]
+      se_val   <- se(m_tt)["is_comparison"]
+      t_val    <- coef_val / se_val
+      p_val    <- 2 * pt(-abs(t_val), df = nobs(m_tt) - 2)
+      
+      mean_g   <- weighted.mean(df_tt$unit_price[df_tt$is_comparison == 1],
+                                df_tt$weight[df_tt$is_comparison == 1], na.rm = TRUE)
+      
       cat(sprintf("%-10s %12.2f %12.2f %12.2f %12.4f\n",
                   g,
-                  mean(grp_prices$unit_price, na.rm=TRUE),
-                  gap,
-                  tt$statistic,
-                  tt$p.value))
+                  mean_g,
+                  coef_val,
+                  t_val,
+                  p_val))
     }
   }
 }

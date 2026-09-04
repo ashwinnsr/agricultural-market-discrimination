@@ -173,16 +173,52 @@ process_data <- function(df) {
     )
 
   # --------------------------------------------------------------------------
-  # STEP 8: LAND SIZE CATEGORIES
+  # STEP 8: LAND SIZE CATEGORIES (NSS Official & Literature Schemes)
   # --------------------------------------------------------------------------
   df_cats <- df_cats %>%
     mutate(
-      land_size = cut(
-        total_land,
-        breaks = c(-Inf, 0, 0.5, 2, 5, Inf),
-        labels = c("Landless","Marginal","Small","Medium","Large"),
-        right  = TRUE, include.lowest = TRUE
-      )
+      # Convert total_land (land_possessed in acres) to hectares (1 acre = 0.405 ha)
+      land_possessed_acres = total_land,
+      land_possessed_ha    = total_land * 0.405,
+
+      # A. NSS Official Size Classes (Schedule 33.1 Tabulation Plan)
+      land_class_official = factor(
+        case_when(
+          is.na(land_possessed_ha) | land_possessed_ha < 0.005                   ~ "< 0.01 ha",
+          land_possessed_ha >= 0.005 & land_possessed_ha < 0.405                 ~ "0.01-0.40 ha",
+          land_possessed_ha >= 0.405 & land_possessed_ha < 1.005                 ~ "0.41-1.00 ha",
+          land_possessed_ha >= 1.005 & land_possessed_ha < 2.005                 ~ "1.01-2.00 ha",
+          land_possessed_ha >= 2.005 & land_possessed_ha < 4.005                 ~ "2.01-4.00 ha",
+          land_possessed_ha >= 4.005 & land_possessed_ha < 10.005                ~ "4.01-10.00 ha",
+          land_possessed_ha >= 10.005                                           ~ "10.00+ ha",
+          TRUE                                                                 ~ NA_character_
+        ),
+        levels = c("< 0.01 ha", "0.01-0.40 ha", "0.41-1.00 ha", "1.01-2.00 ha",
+                   "2.01-4.00 ha", "4.01-10.00 ha", "10.00+ ha")
+      ),
+
+      # B. Simplified Literature Classes (for interaction models M7 and plots)
+      # NOTE: Households with zero or near-zero land (land_possessed_ha == 0) are
+      # collapsed into "Marginal" because the true "Landless" cell has only n=2
+      # observations in the regression sample — too few to serve as a reference level
+      # in M7 (caste_cat x land_class_simple interaction) without causing rank
+      # deficiency. The "Marginal" category (> 0, < 1.0 ha) is the smallest
+      # well-populated class and is used as the reference level throughout.
+      land_class_simple = factor(
+        case_when(
+          is.na(land_possessed_ha)                             ~ NA_character_,
+          land_possessed_ha >= 0 & land_possessed_ha < 1.0    ~ "Marginal",   # Includes zero-land (n=2 merged in)
+          land_possessed_ha >= 1.0 & land_possessed_ha < 2.0  ~ "Small",
+          land_possessed_ha >= 2.0 & land_possessed_ha < 4.0  ~ "Semi-Medium",
+          land_possessed_ha >= 4.0 & land_possessed_ha < 10.0 ~ "Medium",
+          land_possessed_ha >= 10.0                           ~ "Large",
+          TRUE                                                 ~ NA_character_
+        ),
+        levels = c("Marginal", "Small", "Semi-Medium", "Medium", "Large")
+      ),
+
+      # Backward compatibility alias
+      land_size = land_class_simple
     )
 
   # --------------------------------------------------------------------------
@@ -249,6 +285,16 @@ process_data <- function(df) {
   print(table(df_final_out$caste_cat))
   cat("   Agency distribution:\n")
   print(table(df_final_out$agency_label, useNA="ifany"))
+
+  # DIAGNOSTIC: price/agency transaction alignment
+  # unit_price prefers b6q18 (ALL disposals); agency_code is b6q10 (MAJOR disposal)
+  # For multi-channel households these come from different transactions.
+  pct_single <- mean(df_final_out$qty_all == df_final_out$qty_major, na.rm = TRUE) * 100
+  cat(sprintf("\n[DIAGNOSTIC] Single-channel households (qty_all == qty_major): %.1f%%\n", pct_single))
+  cat(sprintf("             Multi-channel (price/agency mismatch risk):      %.1f%%\n", 100 - pct_single))
+  if (pct_single < 80) {
+    cat("Warning: >20% of rows may have price from blended multi-channel rate attributed to major-channel agency.\n")
+  }
 
   return(df_final_out)
 }

@@ -1,5 +1,5 @@
 # ==============================================================================
-# 06_agency_regressions.R
+# 07_agency_regressions.R
 # H2: MARKET CHANNEL ACCESS ANALYSIS
 # Tests whether social group predicts which market channel a farmer sells through.
 # Uses correct agency variable: b6q10
@@ -156,39 +156,47 @@ within_channel_results <- data.frame()
 
 for (ch_label in names(channels_to_test)) {
   ch_col <- channels_to_test[[ch_label]]
-  df_ch  <- df_reg %>% filter(.data[[ch_col]] == 1)
-  if (nrow(df_ch) < 200) {
-    cat(sprintf("  %s: too few obs (%d), skipping\n", ch_label, nrow(df_ch)))
-    next
-  }
-  m_ch <- tryCatch(
-    feols(
-      log_unit_price ~ caste_cat + log_qty_sold + log_mpce + log_total_land + visit_fac | crop_code + district,
-      data    = df_ch,
-      weights = ~weight,
-      cluster = ~fsu_id
-    ),
-    error = function(e) NULL
-  )
-  if (!is.null(m_ch)) {
-    for (grp in c("SC","ST","OBC")) {
-      key <- paste0("caste_cat", grp)
-      if (key %in% names(coef(m_ch))) {
-        est <- coef(m_ch)[key]
-        se  <- se(m_ch)[key]
-        pval <- fixest::pvalue(m_ch)[key]
-        within_channel_results <- rbind(within_channel_results, data.frame(
-          channel     = ch_label,
-          group       = grp,
-          estimate    = round(est, 4),
-          se          = round(se, 4),
-          pct_penalty = round((exp(est)-1)*100, 2),
-          p_value     = round(pval, 4),
-          n_obs       = nrow(df_ch)
-        ))
-        sig <- ifelse(pval < 0.01, "***", ifelse(pval < 0.05, "**", ifelse(pval < 0.10, "*", "")))
-        cat(sprintf("  %-18s | %-4s: %.3f (%.1f%%) %s  (n=%d)\n",
-                    ch_label, grp, est, (exp(est)-1)*100, sig, nrow(df_ch)))
+  
+  df_ch_all <- df_reg %>% filter(.data[[ch_col]] == 1)
+  df_ch_res <- df_reg %>% filter(.data[[ch_col]] == 1, qty_all == qty_major)
+  
+  for (subset_type in c("Single-Channel Only", "Unrestricted")) {
+    df_ch <- if (subset_type == "Single-Channel Only") df_ch_res else df_ch_all
+    
+    if (nrow(df_ch) < 200) {
+      cat(sprintf("  %s (%s): too few obs (%d), skipping\n", ch_label, subset_type, nrow(df_ch)))
+      next
+    }
+    m_ch <- tryCatch(
+      feols(
+        log_unit_price ~ caste_cat + log_qty_sold + log_mpce + log_total_land + visit_fac | crop_code + district,
+        data    = df_ch,
+        weights = ~weight,
+        cluster = ~fsu_id
+      ),
+      error = function(e) NULL
+    )
+    if (!is.null(m_ch)) {
+      for (grp in c("SC","ST","OBC")) {
+        key <- paste0("caste_cat", grp)
+        if (key %in% names(coef(m_ch))) {
+          est <- coef(m_ch)[key]
+          se  <- se(m_ch)[key]
+          pval <- fixest::pvalue(m_ch)[key]
+          within_channel_results <- rbind(within_channel_results, data.frame(
+            channel     = ch_label,
+            sample_type = subset_type,
+            group       = grp,
+            estimate    = round(est, 4),
+            se          = round(se, 4),
+            pct_penalty = round((exp(est)-1)*100, 2),
+            p_value     = round(pval, 4),
+            n_obs       = nrow(df_ch)
+          ))
+          sig <- ifelse(pval < 0.01, "***", ifelse(pval < 0.05, "**", ifelse(pval < 0.10, "*", "")))
+          cat(sprintf("  %-18s (%-19s) | %-4s: %.3f (%.1f%%) %s  (n=%d)\n",
+                      ch_label, subset_type, grp, est, (exp(est)-1)*100, sig, nrow(df_ch)))
+        }
       }
     }
   }

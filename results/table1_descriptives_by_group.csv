@@ -1,0 +1,20 @@
+Variable,Type,General_mean,General_sd,OBC_mean,OBC_sd,SC_mean,SC_sd,ST_mean,ST_sd,Full_mean,Full_sd
+Unit Price (Rs./kg),Continuous,30.84,76.45,31.2,71.77,26.55,55.43,29.66,36.82,30.3,67.66
+Log Unit Price,Continuous,2.95,0.94,3.02,0.81,2.96,0.72,3.11,0.71,3,0.82
+Qty Sold (kg),Continuous,5121.03,21726.19,3043.29,14055.67,1832.92,7123.62,1391.34,5653,3232.93,15258
+MPCE (Rs./month),Continuous,7821.51,4764.51,6964.49,4086.32,6210.34,3264.11,6140.88,3608.9,6991.48,4173.68
+Total Land (acres),Continuous,3.75,4.73,3.42,4.53,2.21,2.3,3.01,3.79,3.3,4.3
+Sold to APMC (%),Binary (%),6.1,NA,6.1,NA,3.2,NA,4.1,NA,5.5,NA
+Sold to Local Trader (%),Binary (%),76.3,NA,75.4,NA,80.5,NA,83.6,NA,77.4,NA
+Sold to Government (%),Binary (%),3.8,NA,4.7,NA,3.8,NA,1.5,NA,3.9,NA
+Sold to Cooperative (%),Binary (%),2.5,NA,2.7,NA,1.6,NA,2.2,NA,2.4,NA
+Sold to FPO (%),Binary (%),0.2,NA,0,NA,0,NA,0,NA,0.1,NA
+Sold Formally (%),Binary (%),18.3,NA,18.9,NA,13.4,NA,10.8,NA,17,NA
+Satisfied with Sale (%),Binary (%),64.7,NA,60.8,NA,56.2,NA,69.3,NA,62.3,NA
+Dissatisfied: Low Price (%),Binary (%),29.5,NA,35,NA,39.2,NA,26.9,NA,33,NA
+Dissatisfied: Loan Deduc. (%),Binary (%),0.1,NA,0.1,NA,0.1,NA,0.1,NA,0.1,NA
+Sharecropper (%),Binary (%),0.4,NA,0.4,NA,0.3,NA,0.3,NA,0.4,NA
+Has Any Debt (%),Binary (%),100,NA,100,NA,100,NA,100,NA,100,NA
+Has Informal Lender Debt (%),Binary (%),19.5,NA,26.2,NA,31.9,NA,31.7,NA,25.6,NA
+MSP Aware (%),Binary (%),40.3,NA,35.5,NA,30.5,NA,23.2,NA,34.5,NA
+Sold at MSP (%),Binary (%),9.5,NA,11.3,NA,7.1,NA,6,NA,9.6,NA
